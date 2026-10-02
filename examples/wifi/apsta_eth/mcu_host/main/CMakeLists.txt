@@ -1,3 +1,3 @@
 idf_component_register(SRCS "softap_sta.c" "ethernet/remote_eth.c"
-                    PRIV_REQUIRES esp_wifi nvs_flash esp_netif esp_event
+                    PRIV_REQUIRES esp_wifi nvs_flash esp_netif esp_event esp_hosted
                     INCLUDE_DIRS ".")
