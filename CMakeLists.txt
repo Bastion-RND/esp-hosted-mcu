@@ -24,19 +24,19 @@ endif()
 
 # Public `esp_hosted` surface (IDF component + Linux INTERFACE wrap).
 if(ESP_PLATFORM)
-    file(GLOB _eh_feat_incs LIST_DIRECTORIES true RELATIVE "${EH_PATH}"
+    file(GLOB _eh_feat_incs LIST_DIRECTORIES true
         "${EH_PATH}/host/features/eh_host_feat_*/include")
     if(CONFIG_ESP_HOSTED_HOST_FEAT_BT)
-        list(APPEND _eh_feat_incs "examples/common_components/esp_hosted_bt_host_stack/include")
+        list(APPEND _eh_feat_incs "${EH_PATH}/examples/common_components/esp_hosted_bt_host_stack/include")
     endif()
 
     # ldgen places the feature-descriptor section into a declared region (no
     # "undeclared region" linker warning). Host and CP each map their own section.
     set(_eh_ldfragments "")
     if(CONFIG_ESP_HOSTED_HOST)
-        list(APPEND _eh_ldfragments "host/eh_host_feat_descs.lf")
+        list(APPEND _eh_ldfragments "${EH_PATH}/host/eh_host_feat_descs.lf")
     elseif(CONFIG_ESP_HOSTED_CP)
-        list(APPEND _eh_ldfragments "coprocessor/eh_cp_feat_descs.lf")
+        list(APPEND _eh_ldfragments "${EH_PATH}/coprocessor/eh_cp_feat_descs.lf")
     endif()
 
     set(_eh_bt_port_reqs "")
@@ -45,7 +45,7 @@ if(ESP_PLATFORM)
     endif()
 
     idf_component_register(NAME esp_hosted
-        INCLUDE_DIRS host/compat/include ${_eh_feat_incs}
+        INCLUDE_DIRS "${EH_PATH}/host/compat/include" ${_eh_feat_incs}
         REQUIRES esp_event esp_timer log esp_common esp_wifi
         PRIV_REQUIRES driver esp_driver_gpio esp_driver_spi esp_driver_sdmmc esp_driver_uart
                       esp_pm nvs_flash
