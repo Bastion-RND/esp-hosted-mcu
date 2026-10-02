@@ -1,0 +1,28 @@
+menu "W5500 on ESP32-C6 coprocessor"
+    config EXAMPLE_W5500_MOSI
+        int "SPI2 MOSI GPIO"
+        default -1
+    config EXAMPLE_W5500_MISO
+        int "SPI2 MISO GPIO"
+        default -1
+    config EXAMPLE_W5500_SCLK
+        int "SPI2 SCLK GPIO"
+        default -1
+    config EXAMPLE_W5500_CS
+        int "W5500 chip-select GPIO"
+        default -1
+    config EXAMPLE_W5500_INT
+        int "W5500 interrupt GPIO (-1 uses polling)"
+        default -1
+    config EXAMPLE_W5500_RESET
+        int "W5500 reset GPIO (-1 if not wired)"
+        default -1
+    config EXAMPLE_W5500_SPI_CLOCK_MHZ
+        int "W5500 SPI clock (MHz)"
+        range 1 40
+        default 10
+    config EXAMPLE_W5500_POLL_PERIOD_MS
+        int "W5500 poll period when INT is unused (ms)"
+        range 1 1000
+        default 10
+endmenu
