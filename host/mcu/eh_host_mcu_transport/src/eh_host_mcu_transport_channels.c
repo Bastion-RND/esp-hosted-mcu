@@ -8,6 +8,7 @@
 #include "esp_log.h"
 
 #include "eh_common_interface.h"
+#include "eh_eth_bridge_wire.h"
 #include "eh_common_header.h"
 #include "eh_frame.h"
 #include "eh_host_mcu_transport.h"
@@ -109,6 +110,13 @@ static esp_err_t ap_tx(void *h, void *buf, size_t len)
     if (!buf || len == 0 || len > UINT16_MAX) return ESP_FAIL;
     return eh_host_transport_tx(ESP_AP_IF, 0, buf, (uint16_t)len, 0);
 }
+static esp_err_t eth_tx(void *h, void *buf, size_t len)
+{
+    (void)h;
+    if (!buf || len < 14 || len > 1514) return ESP_ERR_INVALID_ARG;
+    return eh_host_transport_tx(ESP_ETH_IF, EH_ETH_BRIDGE_DATA_IF_NUM,
+                                buf, (uint16_t)len, 0);
+}
 static esp_err_t serial_tx(void *h, void *buf, size_t len)
 {
     (void)h;
@@ -145,6 +153,7 @@ eh_host_channel_t *eh_host_transport_add_channel(void *api_chan,
     switch (if_type) {
     case ESP_STA_IF:    chan->tx = sta_tx;    break;
     case ESP_AP_IF:     chan->tx = ap_tx;     break;
+    case ESP_ETH_IF:    chan->tx = eth_tx;    break;
     case ESP_SERIAL_IF: chan->tx = serial_tx; break;
     default:
         free(chan);

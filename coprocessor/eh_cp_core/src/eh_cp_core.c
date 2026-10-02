@@ -36,6 +36,7 @@
 #include "eh_cp_utils.h"
 #include "eh_cp_host_ps_state.h"
 #include "eh_common_fw_version.h"
+#include "eh_eth_bridge_wire.h"
 #include "eh_cp_transport_test.h"
 #include "eh_cp_core.h"
 #if EH_CP_FEAT_BT_READY
@@ -560,6 +561,13 @@ static void process_rx_pkt(interface_buffer_handle_t *buf_handle)
 			ESP_HEXLOGV("AP_Put", payload, payload_len, 32);
 		}
 #endif
+	} else if (buf_handle->if_type == ESP_ETH_IF) {
+		if (buf_handle->if_num == EH_ETH_BRIDGE_DATA_IF_NUM) {
+			eh_cp_rx_cb_t rx = eh_cp_rx_get(ESP_ETH_IF);
+			if (rx) {
+				rx(payload, payload_len, NULL);
+			}
+		}
 	} else if (buf_handle->if_type == ESP_SERIAL_IF) {
 #if ESP_PKT_STATS
 		pkt_stats.serial_rx++;

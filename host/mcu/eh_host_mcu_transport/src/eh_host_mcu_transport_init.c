@@ -12,6 +12,7 @@
 #include "eh_host_port_master_config.h"
 #include "eh_host_port_transport_defaults.h"
 #include "eh_common_interface.h"
+#include "eh_eth_bridge_wire.h"
 #include "eh_common_header.h"
 #include "eh_host_mcu_transport.h"
 #include "eh_host_mcu_transport_priv.h"
@@ -47,6 +48,8 @@ static struct {
     void *ctx;
 } s_rx = { NULL, NULL };
 static int s_inited;
+static eh_eth_bridge_status_t s_eth_status;
+static int s_eth_status_valid;
 static struct {
     uint8_t  *data;
     size_t    len;
@@ -93,6 +96,21 @@ void eh_host_mcu_transport_dispatch_frame(const interface_buffer_handle_t *h)
 {
     if (!h || !h->payload || !h->payload_len) return;
 
+    if (h->if_type == ESP_ETH_IF &&
+        h->if_num == EH_ETH_BRIDGE_STATUS_IF_NUM) {
+        if (h->payload_len == sizeof(eh_eth_bridge_status_t) &&
+            h->payload[0] == EH_ETH_BRIDGE_WIRE_VERSION) {
+            ensure_mtx();
+            eh_host_port_mutex_lock(s_mtx);
+            memcpy(&s_eth_status, h->payload, sizeof(s_eth_status));
+            s_eth_status_valid = 1;
+            eh_host_port_mutex_unlock(s_mtx);
+        } else {
+            ESP_LOGW("eh_dispatch", "invalid Ethernet status frame");
+        }
+        return;
+    }
+
     if ((h->flags & FLAG_WAKEUP_PKT) && h->payload_len < 1500) {
         ESP_LOGW("eh_dispatch", "Host wakeup triggered, if_type: %u, len: %u",
                     (unsigned int)h->if_type, (unsigned int)h->payload_len);
@@ -104,6 +122,10 @@ void eh_host_mcu_transport_dispatch_frame(const interface_buffer_handle_t *h)
         if ((event_type == EH_PRIV_EVENT_INIT ||
              event_type == EH_PRIV_EVENT_INIT_LEGACY) &&
             (uint16_t)event_len + 2u <= h->payload_len) {
+            ensure_mtx();
+            eh_host_port_mutex_lock(s_mtx);
+            s_eth_status_valid = 0;
+            eh_host_port_mutex_unlock(s_mtx);
             int prc = eh_host_mcu_transport_process_init_event(
                 &h->payload[2], event_len);
             if (prc == 0) {
@@ -213,6 +235,17 @@ void eh_host_mcu_transport_dispatch_frame(const interface_buffer_handle_t *h)
     eh_host_mcu_transport_priv_dispatch_rx(h->payload, h->payload_len);
 }
 
+esp_err_t eh_host_mcu_transport_eth_status_get(eh_eth_bridge_status_t *status)
+{
+    if (!status) return ESP_ERR_INVALID_ARG;
+    ensure_mtx();
+    eh_host_port_mutex_lock(s_mtx);
+    int valid = s_eth_status_valid;
+    if (valid) memcpy(status, &s_eth_status, sizeof(*status));
+    eh_host_port_mutex_unlock(s_mtx);
+    return valid ? ESP_OK : ESP_ERR_NOT_FOUND;
+}
+
 int eh_host_mcu_transport_init(void)
 {
     ensure_mtx();
@@ -251,6 +284,7 @@ int eh_host_mcu_transport_deinit(void)
     }
     /* Flip flag + clear RX reg first; tear down bus outside the lock. */
     s_inited = 0;
+    s_eth_status_valid = 0;
     s_rx.cb  = NULL;
     s_rx.ctx = NULL;
     /* Re-arm auto-init so the next INIT event re-spawns feature init; without

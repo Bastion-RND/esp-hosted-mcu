@@ -7,6 +7,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "esp_err.h"
+#include "eh_eth_bridge_wire.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +40,9 @@ int eh_host_mcu_transport_deinit(void);
 /* Install byte-arrival callback (cb=NULL clears). RX runs on backend worker. */
 int eh_host_mcu_transport_register_rx(
     void (*cb)(const uint8_t *buf, size_t len, void *ctx), void *ctx);
+
+/* Returns the latest Ethernet link/MAC snapshot received from the CP. */
+esp_err_t eh_host_mcu_transport_eth_status_get(eh_eth_bridge_status_t *status);
 
 /* Hand a fully-built TX handle to the bus.  Bus owns lifetime of
  * `bh->priv_buffer_handle` per the contract documented at
