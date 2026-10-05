@@ -61,4 +61,6 @@ int eh_host_feat_wifi_deinit(void)
     return eh_host_feat_rpc_ext_v2_unregister_wifi_event_handlers();
 }
 
+#if CONFIG_ESP_HOSTED_HOST_FEAT_WIFI_AUTO_INIT
 EH_HOST_FEAT_REGISTER(eh_host_feat_wifi_init, eh_host_feat_wifi_deinit, "wifi", 150);
+#endif

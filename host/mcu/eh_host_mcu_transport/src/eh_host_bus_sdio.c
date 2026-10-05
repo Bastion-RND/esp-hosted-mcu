@@ -1813,6 +1813,10 @@ static void sdio_process_rx_task(void *pvParameters)
 				         (unsigned int)buf_handle->payload_len,
 				         (unsigned int)buf_handle->flags);
 			}
+		} else if (buf_handle->if_type == ESP_ETH_IF) {
+			/* Ethernet uses if_num to distinguish link-status messages from
+			 * data frames, so route both through the common dispatcher. */
+			eh_host_mcu_transport_dispatch_frame(buf_handle);
 		} else if (buf_handle->if_type == ESP_PRIV_IF) {
 
 			event = (struct esp_priv_event *) (buf_handle->payload);
